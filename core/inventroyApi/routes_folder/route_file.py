@@ -1,6 +1,6 @@
 from flask import jsonify, request, Blueprint
 from flask_restful import Resource, Api
-from flask_jwt_extended import jwt_required, get_jwt_identity
+from flask_jwt_extended import jwt_required #get_jwt_identity
 # import jwt
 
 
@@ -50,10 +50,10 @@ class Task(Resource):
         #     return {"message": "unauthorized access"}, 403
         # # else:
             # ID is provided, validate the ID
-    @jwt_required
+    # @jwt_required
     def post(self):
         # auth_token = request.headers.get("Authorization")
-        # # decoded = checkToken(auth_token)
+        # decoded = checkToken(auth_token)
 
         # if isinstance(decoded, tuple):  
         #     return decoded
