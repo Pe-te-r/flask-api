@@ -1,72 +1,65 @@
+import os
 from flask import jsonify, request, Blueprint
 from flask_restful import Resource, Api
-from flask_jwt_extended import jwt_required #get_jwt_identity
-# import jwt
+import jwt
 
 
 taskBlueprint = Blueprint('taskBlueprint', __name__)
 api = Api(taskBlueprint)
 
-tasks=["do some coding task realting to python programming","finishup development"]
+tasks=["hello", "world"]
 
-# def checkToken(auth_token):
-#     if not auth_token:
-#         return jsonify({"message":"unauthorized access"})
-    
-#     try:
-#         decoded=jwt.decode(auth_token,'secret_key',algorithms="HS256")
-#         return decoded
-#     except jwt.ExpiredSignatureError:
-#         return jsonify({"message":"token expired"})
-#     except jwt.DecodeError:
-#         return jsonify({"message":"invalid token decode"})
-#     except jwt.InvalidTokenError:
-#         return jsonify({"message":"invalid token"})
+def checkToken(auth_token):
+    if not auth_token:
+        return jsonify({"message":"unauthorized access"})
+    try:
+        decoded=jwt.decode(auth_token,os.getenv("SECRET_KEY"),algorithms="HS256")
+        print(decoded)
+        return decoded
+    except jwt.ExpiredSignatureError:
+        return jsonify({"message":"token expired"})
+    except jwt.InvalidTokenError:
+        return jsonify({"message":"invalid token"})
+    except jwt.DecodeError:
+        return jsonify({"message":"invalid token decode"})
 
 class Task(Resource):
-    """
-    class for routes for tasks
-    """
-    @jwt_required
     def get(self, id=None):
-        try:
-            task_id = int(id)
-        except ValueError:
-            return {"message": "Invalid task ID format. Please provide an integer."}, 400
-            
-        if task_id < 0 or task_id >= len(tasks):
-            return {"message": "Task ID out of range."}, 404
-        return jsonify(tasks[task_id])
-        # auth_token = request.headers.get("Authorization")
-        # decoded = checkToken(auth_token)
-        # access_token = create_access_token(identity={'username': username})
-        # if isinstance(decoded, tuple):
-        #     return decoded
-        # # Check if ID is provided
-        # if id is None:
-        #     if decoded['role'] == 'admin':
-        #         return jsonify(tasks)
-        #     # else:
-        #     return {"message": "unauthorized access"}, 403
-        # # else:
-            # ID is provided, validate the ID
-    # @jwt_required
+        auth_token = request.headers.get("Authorization")
+        decoded = checkToken(auth_token)
+
+        if isinstance(decoded, dict):    
+            if id is None:
+                if decoded['role'] == 'admin':
+                    return jsonify(tasks)
+                else:
+                    return jsonify({"message": "unauthorized access"})
+            else:
+                try:
+                    task_id = int(id)
+                    if task_id < len(tasks) and task_id > 0:
+                        return jsonify(tasks[task_id])
+                    else:
+                        return jsonify({"message": "Task ID out of range."})
+                except ValueError:
+                    return jsonify({"message": "Invalid task ID format. Please provide an integer."})
+                
+        return decoded        
     def post(self):
-        # auth_token = request.headers.get("Authorization")
-        # decoded = checkToken(auth_token)
+        auth_token = request.headers.get("Authorization")
+        decoded=checkToken(auth_token)
 
-        # if isinstance(decoded, tuple):  
-        #     return decoded
+        if isinstance(decoded,dict):
+            data = request.get_json()
+            if data is None:
+                return {"message": "No data provided."}, 400
+
+
+            username=decoded['username']
+            info={username: data} 
+            tasks.append(info)
+            return {"message": "Task created successfully."}, 201
         
-        data = request.get_json()
-        if data is None:
-            return {"message": "No data provided."}, 400
-
-        if "task" not in data:
-            return {"message": "No task provided."}, 400
-
-        tasks.append(data["task"])
-        return {"message": "Task created successfully."}, 201
-
+        return decoded
 
 api.add_resource(Task,'/task/<int:id>','/task')
