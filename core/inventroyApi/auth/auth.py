@@ -1,43 +1,46 @@
-from flask import Response, Blueprint,request,jsonify
-import jwt
-import time
-import os
+# import os
+# import time
+from werkzeug.security import generate_password_hash, check_password_hash
+from flask import Blueprint, jsonify, request
+from flask_jwt_extended import  create_access_token
 
-auth=Blueprint('auth',__name__)
+auth = Blueprint('auth', __name__)
 
-users=[]
+users = []
 
 
 @auth.route("/register",methods=["POST"])
 def register():
-    data=request.get_json()
-    for user in users:
-        if user['name'] == data['name']:
-            return jsonify({"message":"user already exist"})
-    if data['name'] != None and data['password'] != None:
-        users.append(data)
+    try:
+        data = request.get_json()
+        if data is None:
+            return jsonify({"message": "no data provided"})
+        username=data["username"]
+        password=data["password"]
+        for user in users:
+            if user['username']==username:
+                return jsonify({"message":"user already exist"})
+        if username is not None and password is not None:
+            hashedPassword=generate_password_hash(password)
+            users.append({"username":username,"password":hashedPassword,"role":"user"})
+            return jsonify({"message":"user created successfully"})
         return jsonify({"message":"user created successfully"})
-    else:
-        return jsonify({"message":"name and password are required"})
+    except Exception:
+        print(Exception)
+        return jsonify("error"), 404
 
 @auth.route('/login', methods=['POST'])
 def login():
-    data=request.get_json() 
-    if data is None: return jsonify({"message":"no data provided"})   
-    if len(users) == 0: return jsonify({"message":"no user is registered"})
+    data= request.get_json() 
+    if data is None:
+        return jsonify({"message":"no data provided"})   
+    if len(users) == 0:
+        return jsonify({"message":"no user is registered"})
     for user in users:
-        if user['name']==data['name'] and user['password']==data['password']:
-            data={
-                "name":data['name'],
-                "role":user['role'],
-                "exp": int(time.time() + 60 * 60) 
-            }
-
-            token = jwt.encode(data, "secret_key", algorithm="HS256")
-            response_data={
-                "message":"login successfull",
-                "token":{"token":token}
-            }
-            return jsonify(response_data)
+        if user['username'] == data['username'] and check_password_hash(user['password'], data['password']):
+            access_token = create_access_token(identity={'username': user['username'] })
+            
+            return jsonify(access_token)
         else:
-            return jsonify({"message":"login failed"})
+            return jsonify({users})
+            # return jsonify({"message":"login failed"})
