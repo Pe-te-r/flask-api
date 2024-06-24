@@ -17,12 +17,13 @@ def register():
         return jsonify({"message":"no data provided"})
     username=data["username"]
     password=data["password"]
+    role=data['role']
     for user in users:
         if user['username']==username:
             return jsonify({"message":"user already exist"})
     if username is not None and password is not None:
         hashedPassword=generate_password_hash(password)
-        users.append({"username":username,"password":hashedPassword,"role":"user"})
+        users.append({"username":username,"password":hashedPassword,"role":role})
         return jsonify({"message":"user created successfully"})
 
 
@@ -40,6 +41,7 @@ def login():
                 "role": user['role'],
                 "exp": datetime.datetime.utcnow() + datetime.timedelta(hours=1)
             }
+            print(payload)
             access_token = jwt.encode(payload, os.getenv("SECRET_KEY"), algorithm="HS256")
             return jsonify(access_token)
         else:

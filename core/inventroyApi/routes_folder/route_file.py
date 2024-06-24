@@ -31,13 +31,14 @@ class Task(Resource):
         if isinstance(decoded, dict):    
             if id is None:
                 if decoded['role'] == 'admin':
+                    print(decoded['role'])
                     return jsonify(tasks)
                 else:
                     return jsonify({"message": "unauthorized access"})
             else:
                 try:
                     task_id = int(id)
-                    if task_id < len(tasks) and task_id > 0:
+                    if task_id < len(tasks) and task_id >= 0:
                         return jsonify(tasks[task_id])
                     else:
                         return jsonify({"message": "Task ID out of range."})
