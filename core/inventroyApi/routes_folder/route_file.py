@@ -7,7 +7,7 @@ import jwt
 taskBlueprint = Blueprint('taskBlueprint', __name__)
 api = Api(taskBlueprint)
 
-tasks=["hello", "world"]
+tasks=[]
 
 def checkToken(auth_token):
     if not auth_token:
@@ -50,17 +50,42 @@ class Task(Resource):
         auth_token = request.headers.get("Authorization")
         decoded=checkToken(auth_token)
 
+        print(request.get_json())
+
         if isinstance(decoded,dict):
             data = request.get_json()
+            print(data)
             if data is None:
                 return {"message": "No data provided."}, 400
 
 
             username=decoded['username']
-            info={username: data} 
+            info = {"username": username, "task": data}
             tasks.append(info)
             return {"message": "Task created successfully."}, 201
         
         return decoded
+    
+    def put(self,id):
+        auth_token = request.headers.get("Authorization")
+        decoded=checkToken(auth_token)
+
+        if isinstance(decoded,dict):
+            data = request.get_json()
+            if data is None:
+                return {"message": "No data provided."}, 400
+            try:
+                task_id = int(id)
+                print(task_id)
+                if task_id < len(tasks) and task_id >= 0:
+                    tasks[task_id] = data
+                    return {"message": "Task updated successfully."}, 200
+                else:
+                    return {"message": "Task ID out of range."}, 400
+            except ValueError:
+                return {"message": "Invalid task ID format. Please provide an integer."}, 400
+        return decoded
+    
 
 api.add_resource(Task,'/task/<int:id>','/task')
+
